@@ -1,0 +1,91 @@
+namespace: cobra-enterprise
+
+mongodb:
+  defines: runnable
+  inherits: mongodb/mongodb
+  metadata:
+    name: mongodb
+    description: MongoDB database required by the backend service.
+    icon: >-
+      https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA8VbFgxH-i78AZmNqD93mVRkTRd30POqLeCmg9T05ug&s
+  variables:
+    mongo-image:
+      type: string
+      value: latest
+      description: ''
+    mongo-init-database:
+      type: string
+      value: mongo
+      description: ''
+    mongo-init-password:
+      type: string
+      value: password
+      description: ''
+    mongo-init-username:
+      type: string
+      value: mongo
+      description: ''
+    mongodb-image:
+      type: string
+      value: latest
+      description: ''
+
+cobra-enterprise-backend:
+  defines: runnable
+  metadata:
+    name: cobra-enterprise-backend
+    description: >-
+      Node.js backend service that serves the static frontend and interacts with
+      MongoDB.
+    icon: https://emojiapi.dev/api/v1/robot.svg
+  containers:
+    cobra-enterprise-backend:
+      image: env-4213.registry.local/cobra-enterprise-backend:master-27f30ef
+      build: .
+      dockerfile: Dockerfile
+  services:
+    http-server:
+      description: HTTP server listening on this port
+      container: cobra-enterprise-backend
+      port: 3001
+      host-port: 3001
+      publish: true
+      protocol: tcp
+  connections:
+    database-connection:
+      target: cobra-enterprise/mongodb
+      service: mongodb
+      optional: true
+      description: Connection to the MongoDB database
+  variables:
+    db-host:
+      env: DB_HOST
+      type: string
+      value: <- connection-hostname("database-connection")
+      description: Hostname for the MongoDB database connection
+    db-port:
+      env: DB_PORT
+      type: int
+      value: <- connection-port("database-connection")
+      description: Port for the MongoDB database connection
+    db-name:
+      env: DB_NAME
+      type: string
+      value: mongo
+      description: Database name for the MongoDB connection
+    db-user:
+      env: DB_USER
+      type: string
+      value: mongo
+      description: Username for the MongoDB database connection
+    db-pass:
+      env: DB_PASS
+      type: string
+      value: password
+      description: Password for the MongoDB database connection
+
+stack:
+  defines: group
+  members:
+    - cobra-enterprise/mongodb
+    - cobra-enterprise/cobra-enterprise-backend
